@@ -115,8 +115,8 @@ app.post("/insert", async (req, res, next) => {
     const db = client.db(dbName);
     try {
         let meds = req.body.medicine;
-        if (meds == null) meds = [];           
-        else if (!Array.isArray(meds)) meds = [meds]; 
+        if (meds == null) meds = [];
+        else if (!Array.isArray(meds)) meds = [meds];
 
         meds = meds.map(m => String(m).trim()).filter(m => m !== '');
         let newObject = {};
@@ -175,7 +175,6 @@ app.get('/search', (req, res, next) => {
 // perform search using query params (GET /search/results?name=...&userId=...)
 app.get('/search/results', async (req, res, next) => {
     const db = client.db(dbName);
-    const collection = db.collection('users'); // change if your collection name differs
 
     try {
         const q = {
@@ -214,8 +213,13 @@ app.get('/fail', (req, res) => {
 })
 
 app.get('/about', (req, res, next) => {
-    res.status(200).render("about");
-})
+    const team = [
+        	{ name: 'Chau Yue Ting', role: 'Project Leader' },
+        	{ name: 'Chung Wang Lin', role: 'Project member' },
+        	{ name: 'Yam Kok Hon', role: 'Project member' }
+    ];
+    res.render('about', { team });
+});
 
 app.post('/login', (req, res) => {
     const found = users.find(user => user.name === req.body.name && user.password === req.body.password);
@@ -321,6 +325,36 @@ app.delete("/api/delete/userId/:userId", async (req, res, next) => {
 
     }
 })
+
+//search
+//curl "localhost:8099/api/search/userId/12345"
+app.get("/api/search/userId/:userId", async (req, res, next) => {
+        const db = client.db(dbName);
+        try {
+            const q = {
+                userId: req.params.userId,
+                // name: req.params.name,
+                // age: req.params.age,
+                // weight: req.params.weight,
+                // height: req.params.height,
+                // medicine: req.params.medicine,
+                // gender: req.params.gender.toUpperCase()
+            };
+
+            Object.keys(q).forEach((k) => {
+                const v = q[k];
+                if (v == null || String(v).trim() === '') {
+                    delete q[k];
+                }
+            });
+
+            const results = await searchDatabase(db, q);
+            res.status(200).type("json").send(results);
+        } catch (err) {
+            console.error('Search error:', err);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+});
 
 //port
 app.listen(process.env.PORT || 8099);
