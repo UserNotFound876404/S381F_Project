@@ -215,7 +215,7 @@ app.get('/fail', (req, res) => {
 app.get('/about', (req, res, next) => {
     const team = [
         	{ name: 'Chau Yue Ting', role: 'Project Leader' },
-        	{ name: 'Chung Wing Nin', role: 'Project member' },
+        	{ name: 'Chung Wang Lin', role: 'Project member' },
         	{ name: 'Yam Kok Hon', role: 'Project member' }
     ];
     res.render('about', { team });
@@ -295,10 +295,10 @@ app.put("/api/userId/:userId", async (req, res, next) => {
         const database = await findDatabase(db);
         database.forEach((object) => {
             if (object.userId == req.params.userId) {
-                await updateDatabase(db, req.params.userId, req.body.name, req.body.age, req.body.weight, req.body.height, req.body.medicine, req.body.userId, req.body.gender);
+                updateDatabase(db, req.params.userId, req.body.name, req.body.age, req.body.weight, req.body.height, req.body.medicine, req.body.userId, req.body.gender);
             }
         })
-         res.status(200).send("Data updated");
+        res.status(200).send("Data updated");
     } catch (err) {
         console.error("Error fetching database:", err);
         res.status(500).json({ error: "Internal server error" });
@@ -357,5 +357,3 @@ app.get("/api/search/userId/:userId", async (req, res, next) => {
 
 //port
 app.listen(process.env.PORT || 8099);
-
-
