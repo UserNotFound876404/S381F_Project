@@ -1,7 +1,7 @@
 const express = require('express');
 const { MongoClient, ServerApiVersion, HostAddress } = require('mongodb');
 const app = express();
-const url = "mongodb+srv://cloud381:cloud381@cluster0.bjmfioi.mongodb.net/?appName=Cluster0";
+const url = process.env.MongoDB_URL;
 const dbName = "fyp";
 const collectionName = "users";
 const client = new MongoClient(url);
@@ -240,3 +240,4 @@ app.post("/createAccount", async (req, res, next) => {
 
 //port
 app.listen(process.env.PORT || 8099);
+
