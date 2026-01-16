@@ -1,9 +1,8 @@
 const express = require('express');
 const { MongoClient, ServerApiVersion, HostAddress } = require('mongodb');
 const app = express();
-const url = "mongodb+srv://cloud381:cloud381@cluster0.bjmfioi.mongodb.net/?appName=Cluster0";
-const dbName = "school";
-const collectionName = "patients";
+const dbName = "fyp";
+const collectionName = "users";
 const client = new MongoClient(url);
 const bodyParser = require('body-parser');
 
@@ -42,9 +41,7 @@ const searchDatabase = async (db, query) => {
         // Ensure query is an object; if empty, use {}
         const q = (query && typeof query === 'object' && Object.keys(query).length) ? query : {};
 
-        // Use the provided query in find()
         const cursor = await collection.find(q);
-
         const results = await cursor.toArray();
         return results;
     } catch (err) {
@@ -85,171 +82,7 @@ app.get('/', (req, res, next) => {
 });
 
 app.get("/home", (req, res, next) => {
-    res.render("home");
-})
-
-app.get('/help', (req, res, next) => {
-    res.render('help');
-});
-
-app.get('/login', (req, res, next) => {
-    res.status(200).render('login');
-});
-
-app.get('/signup', (req, res, next) => {
-    res.status(200).render('signup');
-})
-app.post('/signup', (req, res, next) => {
-    let newAccount = {};
-    newAccount['name'] = req.body.name;
-    newAccount['password'] = req.body.password;
-    users.push(newAccount);
-    res.redirect("login");
-});
-
-//insert
-app.get('/insert', (req, res, next) => {
-    res.status(200).render('insert');
-})
-app.post("/insert", async (req, res, next) => {
-    const db = client.db(dbName);
-    try {
-        let meds = req.body.medicine;
-        if (meds == null) meds = [];
-        else if (!Array.isArray(meds)) meds = [meds];
-
-        meds = meds.map(m => String(m).trim()).filter(m => m !== '');
-        let newObject = {};
-        newObject['userId'] = req.body.userId;
-        newObject['name'] = req.body.name;
-        newObject['age'] = req.body.age;
-        newObject['weight'] = req.body.weight;
-        newObject['height'] = req.body.height;
-        newObject['medicine'] = meds;
-        newObject['gender'] = req.body.gender.toUpperCase();
-        insertDatabase(db, newObject);
-        res.status(200).redirect("success"); // sends JSON and ends response
-    } catch (err) {
-        console.error("Error fetching database:", err);
-        res.status(500).json({ error: "Internal server error" });
-    }
-});
-
-//update
-app.get('/update', (req, res, next) => {
-    res.status(200).render('update');
-});
-app.post("/update", async (req, res, next) => {
-    const db = client.db(dbName);
-    try {
-        updateDatabase(db, req.body.olduserId, req.body.name, req.body.age, req.body.weight, req.body.height, req.body.medicine, req.body.userId, req.body.gender.toUpperCase());
-        res.status(200).redirect("success");
-    } catch (err) {
-        console.error("Error fetching database:", err);
-        res.status(500).json({ error: "Internal server error" });
-    }
-});
-
-//delete
-app.get('/delete', (req, res, next) => {
-    res.status(200).render('delete');
-});
-app.post('/delete', (req, res, next) => {
-    const db = client.db(dbName);
-    try {
-        deleteDatabase(db, req.body.userId);
-        res.status(200).redirect("success");
-    }
-    catch (err) {
-        console.error("Error fetching database:", err);
-        res.status(500).json({ error: "Internal server error" });
-    }
-});
-
-// Search form (GET)
-// render simple search form
-app.get('/search', (req, res, next) => {
-    res.status(200).render('search'); // create views/search.ejs below
-});
-
-// perform search using query params (GET /search/results?name=...&userId=...)
-app.get('/search/results', async (req, res, next) => {
-    const db = client.db(dbName);
-
-    try {
-        const q = {
-            userId: req.query.userId,
-            name: req.query.name,
-            age: req.query.age,
-            weight: req.query.weight,
-            height: req.query.height,
-            medicine: req.query.medicine,
-            gender: req.query.gender.toUpperCase()
-        };
-
-        Object.keys(q).forEach((k) => {
-            const v = q[k];
-            if (v == null || String(v).trim() === '') {
-                delete q[k];
-            }
-        });
-
-        const results = await searchDatabase(db, q);
-        res.status(200).render('results', { results, query: req.query });
-    } catch (err) {
-        console.error('Search error:', err);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-
-
-app.get('/success', (req, res, next) => {
-    res.status(200).render('success');
-})
-
-app.get('/fail', (req, res) => {
-    res.status(200).render('fail');
-})
-
-app.get('/about', (req, res, next) => {
-    const team = [
-        	{ name: 'Chau Yue Ting', role: 'Project Leader' },
-        	{ name: 'Chung Wing Nin', role: 'Project member' },
-        	{ name: 'Yam Kok Hon', role: 'Project member' }
-    ];
-    res.render('about', { team });
-});
-
-app.post('/login', (req, res) => {
-    const found = users.find(user => user.name === req.body.name && user.password === req.body.password);
-    if (found) {
-        req.session.authenticated = true;
-        req.session.username = req.body.name;
-        return res.redirect('/list'); // return to prevent fallthrough
-    }
-    return res.redirect('/fail'); // single response
-});
-
-app.get('/list', async (req, res) => {
-    console.log(req.session);
-    if (!req.session.authenticated) {    // user not logged in!
-        res.redirect('/login');
-    } else {
-        try {
-            const db = client.db(dbName);
-            const data = await findDatabase(db); // wait for data
-            res.status(200).render('list', { name: req.session.username, num: data.length, data: data });
-        } catch (error) {
-            console.error('Database fetch error:', error);
-            res.status(500).send('Internal Server Error');
-        }
-    }
-});
-
-app.get('/logout', (req, res) => {
-    req.session = null;
-    res.redirect("/");
+    res.write("<h1>home</h1>");
 })
 
 //Restful API
@@ -266,26 +99,75 @@ app.get("/api", async (req, res, next) => {
     }
 });
 
-//insert
-//curl -X POST -d "name=test&age=40&userId=22222&weight=76&height=177&medicine=meds0&medicine=meds4&gender=Male" "localhost:8099/api"
-app.post("/api", async (req, res, next) => {
+//curl -X POST http://localhost:8099/login -H "Content-Type: application/json" -d "{\"email\":\"tom@example.com\",\"password\":\"secret123\"}"
+app.post("/login", async (req, res) => {
     try {
-        let newObject = {};
-        newObject['userId'] = req.body.userId;
-        newObject['name'] = req.body.name;
-        newObject['age'] = req.body.age;
-        newObject['weight'] = req.body.weight;
-        newObject['height'] = req.body.height;
-        newObject['medicine'] = req.body.medicine;
-        newObject['gender'] = req.body.gender.toUpperCase();
+        const { email, password } = req.body;
+        
+        // Validation
+        if (!email || !password) {
+            return res.status(400).json({ error: "Email and password required" });
+        }
+
         const db = client.db(dbName);
-        await insertDatabase(db, newObject);
-        res.status(200).send("Data inserted"); // sends JSON and ends response
+        
+        // Find user by email (using your searchDatabase)
+        const users = await searchDatabase(db, { email: email.toLowerCase() });
+        const user = users[0]; // searchDatabase returns array
+        
+        // Check if user exists
+        if (!user) {
+            return res.status(401).json({ error: "Invalid credentials" });
+        }
+        
+        // TODO: In production, compare hashed password:
+        // if (user.password !== password) {
+        if (user.password !== password) {  // Currently plain text comparison
+            return res.status(401).json({ error: "Invalid credentials" });
+        }
+
+        // Remove password from response
+        const { password: _, ...userData } = user;
+        
+        // Update lastUpdate on login
+        userData.lastUpdate = new Date().toISOString();
+        
+        res.status(200).json({ 
+            message: "Login successful",
+            user: userData 
+        });
+
     } catch (err) {
-        console.error("Error fetching database:", err);
+        console.error("Login error:", err);
         res.status(500).json({ error: "Internal server error" });
     }
 });
+
+//create account
+//curl -X POST -H "Content-Type: application/json" -d "{\"name\":\"Tom\",\"gender\":\"male\",\"email\":\"Tom@example.com\",\"password\":\"secret123\",\"telephone\":\"+85212345678\",\"birth\":\"1990-01-01\",\"streak\":0,\"medicine\":[{\"name\":\"meds0\",\"dosage\":\"10mg\",\"frequencyCount\":2,\"frequencyUnit\":\"daily\",\"time\":[\"08:00\",\"20:00\"]}]}" http://localhost:8099/createAccount
+app.post("/createAccount", async (req, res, next) => {
+    try {
+        let newObject = {
+            name: req.body.name,
+            email: req.body.email,
+            password: req.body.password,     // Hash before saving!
+            telephone: req.body.telephone,   
+            birth: req.body.birth,           // YYYY-MM-DD
+            streak: req.body.streak,         
+            medicine: req.body.medicine,
+            gender: req.body.gender.toUpperCase(),
+            lastUpdate: new Date().toISOString()  // Current timestamp (ISO format)
+        };
+        
+        const db = client.db(dbName);
+        await insertDatabase(db, newObject);
+        res.status(200).json({ message: "Data inserted successfully" });
+    } catch (err) {
+        console.error("Error inserting data:", err);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
 
 //update
 //curl -X PUT -d "name=demo&age=20&userId=11111&weight=50&height=177&medicine=meds0&medicine=meds4&medicine=meds2&gender=Male" "localhost:8099/api/userId/22222"
@@ -326,35 +208,6 @@ app.delete("/api/delete/userId/:userId", async (req, res, next) => {
 })
 
 //search
-//curl "localhost:8099/api/search/userId/12345"
-app.get("/api/search/userId/:userId", async (req, res, next) => {
-        const db = client.db(dbName);
-        try {
-            const q = {
-                userId: req.params.userId,
-                // name: req.params.name,
-                // age: req.params.age,
-                // weight: req.params.weight,
-                // height: req.params.height,
-                // medicine: req.params.medicine,
-                // gender: req.params.gender.toUpperCase()
-            };
-
-            Object.keys(q).forEach((k) => {
-                const v = q[k];
-                if (v == null || String(v).trim() === '') {
-                    delete q[k];
-                }
-            });
-
-            const results = await searchDatabase(db, q);
-            res.status(200).type("json").send(results);
-        } catch (err) {
-            console.error('Search error:', err);
-            res.status(500).json({ error: 'Internal server error' });
-        }
-});
 
 //port
 app.listen(process.env.PORT || 8099);
-
