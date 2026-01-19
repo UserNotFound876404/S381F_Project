@@ -7,6 +7,7 @@ const collectionName = "users";
 const client = new MongoClient(url);
 const bodyParser = require('body-parser');
 
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -240,4 +241,3 @@ app.post("/createAccount", async (req, res, next) => {
 
 //port
 app.listen(process.env.PORT || 8099);
-
