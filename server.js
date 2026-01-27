@@ -150,11 +150,7 @@ app.post("/login", async (req, res) => {
 app.post("/createAccount", async (req, res, next) => {
     try {
 
-        const db = client.db(dbName);
-        const existingUser = await db.collection('users').findOne({ email });
-        if (existingUser) {
-            return res.status(409).json({ error: "Email already registered" });
-        }
+        
     
         
         let newObject = {
@@ -168,8 +164,11 @@ app.post("/createAccount", async (req, res, next) => {
             gender: req.body.gender.toUpperCase(),
             lastUpdate:  new Date().toLocaleString("en-US", { timeZone: 'Asia/Hong_Kong' });  
         };
-        
         const db = client.db(dbName);
+        const existingUser = await db.collection('users').findOne({ email });
+        if (existingUser) {
+            return res.status(409).json({ error: "Email already registered" });
+        }
         await insertDatabase(db, newObject);
         res.status(200).json({ message: "Account created successfully" });
     } catch (err) {
@@ -285,5 +284,6 @@ app.post("/api/users/:email/medicine", async (req, res) => {  // :email instead 
 
 //port
 app.listen(process.env.PORT || 8099);
+
 
 
