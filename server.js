@@ -149,6 +149,14 @@ app.post("/login", async (req, res) => {
 //curl -X POST -H "Content-Type: application/json" -d "{\"name\":\"Tom\",\"gender\":\"male\",\"email\":\"Tom@example.com\",\"password\":\"secret123\",\"telephone\":\"+85212345678\",\"birth\":\"1990-01-01\",\"streak\":0,\"medicine\":[{\"name\":\"meds0\",\"dosage\":\"10mg\",\"frequencyCount\":2,\"frequencyUnit\":\"daily\",\"time\":[\"08:00\",\"20:00\"]}]}" http://localhost:8099/createAccount
 app.post("/createAccount", async (req, res, next) => {
     try {
+
+        const db = client.db(dbName);
+        const existingUser = await db.collection('users').findOne({ email });
+        if (existingUser) {
+            return res.status(409).json({ error: "Email already registered" });
+        }
+    
+        
         let newObject = {
             name: req.body.name,
             email: req.body.email,
@@ -158,12 +166,12 @@ app.post("/createAccount", async (req, res, next) => {
             streak: 0,         
             medicine: [],
             gender: req.body.gender.toUpperCase(),
-            lastUpdate: new Date().toISOString()  // Current timestamp (ISO format)
+            lastUpdate:  new Date().toLocaleString("en-US", { timeZone: 'Asia/Hong_Kong' });  
         };
         
         const db = client.db(dbName);
         await insertDatabase(db, newObject);
-        res.status(200).json({ message: "Data inserted successfully" });
+        res.status(200).json({ message: "Account created successfully" });
     } catch (err) {
         console.error("Error inserting data:", err);
         res.status(500).json({ error: "Internal server error" });
@@ -277,4 +285,5 @@ app.post("/api/users/:email/medicine", async (req, res) => {  // :email instead 
 
 //port
 app.listen(process.env.PORT || 8099);
+
 
