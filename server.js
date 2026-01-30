@@ -211,40 +211,36 @@ app.post("/createAccount", async (req, res, next) => {
 // })
 
 //update medicine 
-app.post("/api/users/:email/medicine", async (req, res) => {  // :email instead of :userId
+app.post("/api/users/:email/medicine", async (req, res) => {
     try {
         const db = client.db(dbName);
-        const email = req.params.email;  // "tom@example.com"
-        
+        const email = req.params.email;
+
         const newMedicine = req.body;
-        const database = await findDatabase(db);
-        let userFound = false;
-        
-        database.forEach(async (object) => {
-            if (object.email == email) {  // Match by email
-                userFound = true;
-                await db.collection("users").updateOne(
-                    { email: email },  // Query by email
-                    { 
-                       $push: { medicine: newMedicine },
-                        $set: { 
-                            lastUpdate: new Date().toLocaleString("en-US", { timeZone: 'Asia/Hong_Kong' })
-                        }
-                    }
-                );
-            }
-        });
-        
-        if (!userFound) {
+
+        // Direct MongoDB query - no race condition
+        const user = await db.collection("users").findOne({ email: email });
+        if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
-        
+
+        await db.collection("users").updateOne(
+            { email: email },
+            { 
+                $push: { medicine: newMedicine },
+                $set: { 
+                    lastUpdate: new Date().toLocaleString("en-US", { timeZone: 'Asia/Hong_Kong' })
+                }
+            }
+        );
+
         res.json({ message: "Medicine inserted successfully" });
     } catch (err) {
         console.error("Error:", err);
         res.status(500).json({ error: "Internal server error" });
     }
 });
+
 
 
 
@@ -299,4 +295,5 @@ app.post("/api/users/:email/medicine", async (req, res) => {  // :email instead 
 
 //port
 app.listen(process.env.PORT || 8099);
+
 
