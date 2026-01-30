@@ -149,26 +149,41 @@ app.post("/login", async (req, res) => {
 //curl -X POST -H "Content-Type: application/json" -d "{\"name\":\"Tom\",\"gender\":\"male\",\"email\":\"Tom@example.com\",\"password\":\"secret123\",\"telephone\":\"+85212345678\",\"birth\":\"1990-01-01\",\"streak\":0,\"medicine\":[{\"name\":\"meds0\",\"dosage\":\"10mg\",\"frequencyCount\":2,\"frequencyUnit\":\"daily\",\"time\":[\"08:00\",\"20:00\"]}]}" http://localhost:8099/createAccount
 app.post("/createAccount", async (req, res, next) => {
     try {
+        // Basic validation
+        const { name, email, password, birth, gender } = req.body;
+        if (!name || !email || !password || !birth || !gender) {
+            return res.status(400).json({ error: "Missing required fields: name, email, password, birth, gender" });
+        }
+
+        const normalizedEmail = email.toLowerCase().trim();
+
+        const db = client.db(dbName);
+        
+        // Check if email already exists (using your existing searchDatabase)
+        const existingUsers = await searchDatabase(db, { email: normalizedEmail });
+        if (existingUsers.length > 0) {
+            return res.status(409).json({ error: "Account with this email already exists" });
+        }
+
         let newObject = {
-            name: req.body.name,
-            email: req.body.email,
-            password: req.body.password,     // Hash before saving!
-            //telephone: req.body.telephone,   
-            birth: req.body.birth,           // YYYY-MM-DD
+            name: name.trim(),
+            email: normalizedEmail,
+            password: password,     // Hash before saving in production!
+            birth: birth,           // YYYY-MM-DD
             streak: 0,         
             medicine: [],
-            gender: req.body.gender.toUpperCase(),
-            lastUpdate: new Date().toLocaleString("en-US", { timeZone: 'Asia/Hong_Kong' })  // Current timestamp (ISO format)
+            gender: gender.toUpperCase().trim(),
+            lastUpdate: new Date().toLocaleString("en-US", { timeZone: 'Asia/Hong_Kong' })
         };
         
-        const db = client.db(dbName);
         await insertDatabase(db, newObject);
-        res.status(200).json({ message: "Data inserted successfully" });
+        res.status(201).json({ message: "Account created successfully" });
     } catch (err) {
-        console.error("Error inserting data:", err);
+        console.error("Error creating account:", err);
         res.status(500).json({ error: "Internal server error" });
     }
 });
+
 
 
 //update
@@ -277,6 +292,7 @@ app.post("/api/users/:email/medicine", async (req, res) => {  // :email instead 
 
 //port
 app.listen(process.env.PORT || 8099);
+
 
 
 
