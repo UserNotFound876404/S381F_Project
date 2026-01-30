@@ -159,19 +159,25 @@ app.get("/medicine/:userId", async (req, res) => {
 
         const db = client.db(dbName);
         
-        // Find user by _id (using your searchDatabase)
-        const users = await searchDatabase(db, { _id: userId });
-        const user = users[0]; // searchDatabase returns array
+        // ✅ FIX: Convert string to ObjectId for MongoDB query
+        let objectId;
+        try {
+            // Convert hex string to ObjectId (handles Object('xxx') format)
+            objectId = new require('mongodb').ObjectId(userId);
+        } catch (e) {
+            return res.status(400).json({ error: "Invalid userId format" });
+        }
         
-        // Check if user exists
+        // Find user by ObjectId
+        const users = await searchDatabase(db, { _id: objectId });
+        const user = users[0];
+        
         if (!user) {
-            return res.status(401).json({ error: "User not found" });
+            return res.status(404).json({ error: "User not found" });
         }
 
         // Remove password from response
         const { password: _, ...userData } = user;
-        
-        // Update lastUpdate on profile fetch
         userData.lastUpdate = new Date().toISOString();
         
         res.status(200).json({ 
@@ -370,3 +376,4 @@ app.delete("/medicine/:email", async (req, res) => {
 
 //port
 app.listen(process.env.PORT || 8099);
+
