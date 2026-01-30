@@ -148,30 +148,27 @@ app.post("/login", async (req, res) => {
 });
 
 //retrieve data by id
-app.get("/data/:email", async (req, res) => {
+app.post("/data", async (req, res) => {
     try {
-        const { email } = req.params;
+        const { email } = req.body;  // ✅ Email from request body
         
         // Validation
         if (!email || !email.includes('@')) {
-            return res.status(400).json({ error: "Valid email required" });
+            return res.status(400).json({ error: "Valid email required in body" });
         }
 
         const db = client.db(dbName);
         
         // ✅ Find user by email (EXACTLY like your login endpoint)
         const users = await searchDatabase(db, { email: email.toLowerCase() });
-        const user = users[0]; // searchDatabase returns array
+        const user = users[0];
         
-        // Check if user exists
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
 
-        // Remove password from response (same as login)
+        // Remove password + update lastUpdate
         const { password: _, ...userData } = user;
-        
-        // Update lastUpdate
         userData.lastUpdate = new Date().toISOString();
         
         res.status(200).json({ 
@@ -180,7 +177,7 @@ app.get("/data/:email", async (req, res) => {
         });
 
     } catch (err) {
-        console.error("Medicine/Profile fetch error:", err);
+        console.error("Data fetch error:", err);
         res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -371,5 +368,6 @@ app.delete("/medicine/:email", async (req, res) => {
 
 //port
 app.listen(process.env.PORT || 8099);
+
 
 
